@@ -2,7 +2,7 @@ from flask import Flask
 from flask import request
 from alchemyapi import AlchemyAPI
 from nltk.corpus import wordnet
-from nltk.parse import stanford
+# from nltk.parse import stanford
 from itertools import chain
 import os
 
@@ -23,13 +23,19 @@ def handlePost(request):
 	content = request.get_json(silent=True)
 	print content
 	if content.has_key('inputText'):
-		input_text = content['inputText']
+		input_text = replaceContractions(content['inputText'])
 		alchemy_response = alchemyapi.keywords('text', input_text, {'sentiment': 1})
 		keywords = alchemy_response['keywords']
 
 		return transformKeywords(keywords)
 	else:
 		return 'ERROR: Couldn\'t find a text key.'
+
+def replaceContractions(input_text):
+	contraction_dict = {}
+	# Lol actually edit this first
+	return input_text
+
 
 def transformKeywords(keywords):
 	str_to_build = str()
