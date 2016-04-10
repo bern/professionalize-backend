@@ -2,6 +2,7 @@ from flask import Flask
 from flask import request
 from alchemyapi import AlchemyAPI
 from nltk.corpus import wordnet
+from nltk.parse import stanford
 from itertools import chain
 import os
 
@@ -16,28 +17,27 @@ def api_test():
     if request.method == 'POST':
         return handlePost(request)
     else:
-		return "ERROR: Couldn't understand your request."
+		return 'ERROR: Couldn\'t understand your request.'
 
 def handlePost(request):
 	content = request.get_json(silent=True)
 	print content
 	if content.has_key('inputText'):
-		input_text = content.get('inputText')
-		alchemy_response = alchemyapi.keywords("text", input_text, {'sentiment': 1})
-		keywords = alchemy_response.get('keywords')
+		input_text = content['inputText']
+		alchemy_response = alchemyapi.keywords('text', input_text, {'sentiment': 1})
+		keywords = alchemy_response['keywords']
 
 		return transformKeywords(keywords)
 	else:
-		return "ERROR: Couldn't find a text key."
+		return 'ERROR: Couldn\'t find a text key.'
 
 def transformKeywords(keywords):
+	str_to_build = str()
 	for keyword in keywords:
-		print 'Here\'s a keyword: ' + keyword.get('text')
-		str_to_build = str()
-		str_to_build += ('text: '      + keyword.get('text').encode('utf-8') + "\n")
-		str_to_build += ('relevance: ' + keyword.get('relevance') + "\n")
-		str_to_build += ('sentiment: ' + keyword.get('sentiment').get('type') + "\n")
-		if keyword['sentiment']['type'] == "negative":
+		str_to_build += ('text: '      + keyword['text'] + '\n')
+		str_to_build += ('relevance: ' + keyword['relevance'] + '\n')
+		str_to_build += ('sentiment: ' + keyword['sentiment']['type'] + '\n')
+		if keyword['sentiment']['type'] == 'negative':
 			word = str(keyword['text'])
 			synonyms = wordnet.synsets(word)
 			syns = set(chain.from_iterable([word.lemma_names() for word in synonyms]))
@@ -45,5 +45,5 @@ def transformKeywords(keywords):
 
 	return str_to_build
 
-if __name__ == "__main__":
+if __name__ == '__main__':
         app.run()
