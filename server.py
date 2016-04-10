@@ -4,6 +4,7 @@ from nltk.corpus import wordnet
 from nltk import word_tokenize, pos_tag, sent_tokenize
 from itertools import chain
 import grammar_check
+import random
 import os
 import re
 
@@ -34,10 +35,11 @@ def handlePost(request):
 		keywords = alchemy_response['keywords']
 
 		transformKeywords(keywords)
-		return jsonify(
-			text=input_text,
-			passive=passive_sentences
-		)
+		return memeSwitch(input_text)
+		# return jsonify(
+		#	text=input_text,
+		#	passive=passive_sentences
+		# )
 	else:
 		return 'ERROR: Couldn\'t find a text key.'
 
@@ -104,7 +106,6 @@ def transformKeywords(keywords):
 		if keyword['sentiment']['type'] == 'negative':
 			word = str(keyword['text'])
 			synsets = wordnet.synsets(word)
-			#syns = set(chain.from_iterable([word.lemmas()[0].antonyms() for word in synsets]))
 			antonyms = []
 			synonyms = []
 			for syn in synsets:
@@ -116,6 +117,45 @@ def transformKeywords(keywords):
 			print word + ': ' + str(antonyms)
 
 	return str_to_build
+
+def memeSwitch(input_text):
+	sentences = sent_tokenize(input_text)
+	return ' '.join(map(memeSentence, sentences))
+
+def memeSentence(sentence):
+	words = word_tokenize(sentence)
+	memed = map(getLongestSynonym, words)
+	memed_sent = (' '.join(memed[:len(memed) - 1]) + memed[len(memed) - 1])
+	memed_sent = cleanupPunctuation(memed_sent).capitalize()
+	return memed_sent
+
+def getLongestSynonym(word):
+	if len(word) <= 2:
+		return word
+
+	syns = wordnet.synsets(word)
+ 	synonyms = filter(
+		filterPhrases,
+		set(chain.from_iterable([word.lemma_names() for word in syns]))
+	)
+
+	if len(synonyms) is 0:
+		return word
+	else:
+		return getRandomMax(synonyms)
+
+def getRandomMax(synonyms):
+	m = len(max(synonyms, key=len))
+	index = random.choice([i for i, j in enumerate(synonyms) if len(j) == m or len(j) == (m - 1)])
+	return synonyms[index]
+
+def cleanupPunctuation(sentence):
+	sentence = re.sub(' ,', ',', sentence)
+	sentence = re.sub(' ;', ';', sentence)
+	return sentence
+
+def filterPhrases(synonym):
+	return '_' not in synonym
 
 if __name__ == '__main__':
 	app.run()
